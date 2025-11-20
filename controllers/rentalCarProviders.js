@@ -1,4 +1,4 @@
-const Hospital = require('../models/Hospital');
+const RentalCarProvider = require('../models/RentalCarProvider');
 const Appointment = require('../models/Appointment');
 
 function transformQuery(input) {
@@ -16,10 +16,10 @@ function transformQuery(input) {
   return output;
 }
 
-//@desc Get all hospitals
-//@route GET /api/v1/hospitals
+//@desc Get all rental car providers
+//@route GET /api/v1/rentalCarProviders
 //@access Public
-exports.getHospitals = async(req,res,next) => {
+exports.getRentalCarProviders = async(req,res,next) => {
     let query;
 
     //Copy req.query
@@ -28,7 +28,7 @@ exports.getHospitals = async(req,res,next) => {
     //Fields to exclude
     const removeFields=['select', 'sort', 'page', 'limit'];
 
-    //Loop over remove fields and deletе them from reqQuery
+    //Loop over remove fields and delete them from reqQuery
     removeFields.forEach(param=>delete reqQuery[param]);
 
     //Create query string
@@ -38,7 +38,7 @@ exports.getHospitals = async(req,res,next) => {
     queryStr = queryStr.replace(/"(\w+)\[(\w+)\]":\s*"([^"]+)"/g, (_, field, op, value) => `"${field}":{"$${op}":"${value}"}`);
 
     //finding resource
-    query = Hospital.find(JSON.parse (queryStr)).populate('appointments');
+    query = RentalCarProvider.find(JSON.parse (queryStr)).populate('bookings');
 
     //Select Fields
     if(req.query.select) {
@@ -59,12 +59,12 @@ exports.getHospitals = async(req,res,next) => {
     const limit = parseInt(req.query.limit,10) || 25;
     const startIndex = (page-1)*limit;
     const endIndex = page*limit;
-    const total = await Hospital.countDocuments();
+    const total = await RentalCarProvider.countDocuments();
     query = query.skip(startIndex).limit(limit);
 
     try {
         //Executing query
-        const hospitals = await query
+        const rentalCarProviders = await query
 
         //Pagination result
         const pagination = {};
@@ -82,69 +82,70 @@ exports.getHospitals = async(req,res,next) => {
         }
 
         //Success response
-        res.status(200).json({success:true, count:hospitals.length, pagination, data:hospitals});
+        res.status(200).json({success:true, count:rentalCarProviders.length, pagination, data:rentalCarProviders});
     } catch(err) {
         res.status(400).json({success:false, error:err});
     }
 };
 
-//@desc Get single hospital
-//@route GET /api/v1/hospitals/:id
+//@desc Get single rental car provider
+//@route GET /api/v1/rentalCarProviders/:id
 //@access Public
-exports.getHospital = async(req,res,next) => {
+exports.getRentalCarProvider = async(req,res,next) => {
     try {
-        const hospital = await Hospital.findById(req.params.id);
-        if (!hospital) {
+        const rentalCarProvider = await RentalCarProvider.findById(req.params.id);
+        if (!rentalCarProvider) {
             return res.status(400).json({success:false, error:"not exist"});
         }
-        res.status(200).json({success:true, data:hospital});
+        res.status(200).json({success:true, data:rentalCarProvider});
     } catch(err) {
         res.status(400).json({success:false, error:err});
     }
 };
 
-//@desc Create new hospital
-//@route POST /api/v1/hospitals
+//@desc Create new rental car provider
+//@route POST /api/v1/rentalCarProviders
 //@access Private
-exports.createHospital = async(req,res,next) => {
-    const hospital = await Hospital.create(req.body);
+exports.createRentalCarProvider = async(req,res,next) => {
+    const rentalCarProvider = await RentalCarProvider.create(req.body);
     res.status(201).json({
         success: true,
-        data: hospital
+        data: rentalCarProvider
     });
 };
 
-//@desc Update hospital
-//@route PUT /api/v1/hospitals/:id
+//@desc Update rental car provider
+//@route PUT /api/v1/rentalCarProviders/:id
 //@access Private
-exports.updateHospital = async(req,res,next) => {
+exports.updateRentalCarProvider = async(req,res,next) => {
     try {
-        const hospital = await Hospital.findByIdAndUpdate(req.params.id, req.body, {
+        const rentalCarProvider = await RentalCarProvider.findByIdAndUpdate(req.params.id, req.body, {
             new: true,
             runValidators: true
         });
-        if (!hospital) {
+        if (!rentalCarProvider) {
             return res.status(400).json({success:false, error:"not exist"});
         }
-        res.status(200).json({success:true, data:hospital});
+        res.status(200).json({success:true, data:rentalCarProvider});
     } catch(err) {
         res.status(400).json({success:false, error:err});
     }
 };
 
-//@desc Delete hospital
-//@route DELETE /ap1/v1/hospitals/:id
+//@desc Delete rental car provider
+//@route DELETE /api/v1/rentalCarProviders/:id
 //@access Private
-exports.deleteHospital = async(req,res,next) => {
+exports.deleteRentalCarProvider = async(req,res,next) => {
     try {
-        const hospital = await Hospital.findById(req.params.id);
-        if (!hospital) {
-            return res.status(400).json({success:false, message:`Hospital not found with id of ${req.params.id}`});
+        const rentalCarProvider = await RentalCarProvider.findById(req.params.id);
+        if (!rentalCarProvider) {
+            return res.status(400).json({success:false, message:`Rental car provider not found with id of ${req.params.id}`});
         }
         await Appointment.deleteMany({ hospital: req.params.id });
-        await Hospital.deleteOne({_id:req.params.id});
+        await RentalCarProvider.deleteOne({_id:req.params.id});
         res.status(200).json({success:true, data:{}});
     } catch(err) {
         res.status(400).json({success:false, error:err});
     }
 };
+
