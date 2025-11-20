@@ -1,4 +1,6 @@
 const User = require("../models/User");
+const { Resend } = require("resend");
+const jwt = require("jsonwebtoken");
 
 //@desc    Register user
 //@route   POST /api/v1/auth/register
@@ -120,4 +122,114 @@ exports.logout = async (req, res, next) => {
     success: true,
     data: {},
   });
+};
+
+//@desc    Forgot password
+//@route   POST /api/v1/auth/forgotpassword
+//@access  Public
+exports.forgotPassword = async (req, res, next) => {
+  try {
+    const user = await User.findOne({ email: req.body.email });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        msg: "There is no user with that email",
+      });
+    }
+
+    //Get reset token
+    const resetToken = user.getResetPasswordToken();
+
+    await user.save({ validateBeforeSave: false });
+
+    //Create reset url
+    const resetUrl = `${req.protocol}://${req.get(
+      "host"
+    )}/api/v1/auth/resetpassword/${resetToken}`;
+
+    const message = `You are receiving this email because you (or someone else) has requested the reset of a password. Please make a PUT request to: \n\n ${resetUrl}`;
+
+    try {
+      const resend = new Resend(process.env.RESEND_API_KEY);
+
+      const { data, error } = await resend.emails.send({
+        from: "Rental Car Booking <onboarding@resend.dev>",
+        to: user.email,
+        subject: "Password Reset Token",
+        html: `<strong>Password Reset</strong><p>${message}</p>`,
+      });
+
+      if (error) {
+        user.resetPasswordToken = undefined;
+        user.resetPasswordExpire = undefined;
+        await user.save({ validateBeforeSave: false });
+
+        return res.status(400).json({ success: false, error });
+      }
+
+      res.status(200).json({ success: true, data: "Email sent" });
+    } catch (err) {
+      user.resetPasswordToken = undefined;
+      user.resetPasswordExpire = undefined;
+      await user.save({ validateBeforeSave: false });
+
+      return res.status(500).json({
+        success: false,
+        msg: "Email could not be sent",
+      });
+    }
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      msg: "Server error",
+    });
+  }
+};
+
+//@desc    Reset password
+//@route   PUT /api/v1/auth/resetpassword/:resettoken
+//@access  Public
+exports.resetPassword = async (req, res, next) => {
+  try {
+    //Get reset token
+    const resetPasswordToken = req.params.resettoken;
+
+    //Verify token
+    let decoded;
+    try {
+      decoded = jwt.verify(resetPasswordToken, process.env.JWT_SECRET);
+    } catch (err) {
+      return res.status(400).json({
+        success: false,
+        msg: "Invalid or expired token",
+      });
+    }
+
+    const user = await User.findOne({
+      _id: decoded.id,
+      resetPasswordToken: resetPasswordToken,
+      resetPasswordExpire: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        msg: "Invalid token",
+      });
+    }
+
+    //Set new password
+    user.password = req.body.password;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+    await user.save();
+
+    sendTokenResponse(user, 200, res);
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      msg: "Server error",
+    });
+  }
 };
