@@ -248,9 +248,110 @@
  *        500:
  *          description: Server error
  */
+/**
+ *  @swagger
+ *  /auth/favorites:
+ *    get:
+ *      summary: Get user's favorite rental car providers
+ *      tags: [Auth]
+ *      security:
+ *        - bearerAuth: []
+ *      responses:
+ *        200:
+ *          description: List of favorite rental car providers
+ *          content:
+ *            application/json:
+ *              schema:
+ *                type: object
+ *                properties:
+ *                  success:
+ *                    type: boolean
+ *                  count:
+ *                    type: number
+ *                  data:
+ *                    type: array
+ *                    items:
+ *                      $ref: '#/components/schemas/RentalCarProvider'
+ *        401:
+ *          description: Not authorized
+ *        500:
+ *          description: Server error
+ */
+/**
+ *  @swagger
+ *  /auth/favorites/{rentalCarProviderId}:
+ *    post:
+ *      summary: Add rental car provider to favorites
+ *      tags: [Auth]
+ *      security:
+ *        - bearerAuth: []
+ *      parameters:
+ *        - in: path
+ *          name: rentalCarProviderId
+ *          schema:
+ *            type: string
+ *          required: true
+ *          description: The rental car provider id to add to favorites
+ *      responses:
+ *        200:
+ *          description: Rental car provider added to favorites
+ *          content:
+ *            application/json:
+ *              schema:
+ *                type: object
+ *                properties:
+ *                  success:
+ *                    type: boolean
+ *                  data:
+ *                    type: array
+ *                    items:
+ *                      type: string
+ *                      description: Array of favorite rental car provider IDs
+ *        400:
+ *          description: Already in favorites or bad request
+ *        404:
+ *          description: Rental car provider not found
+ *        401:
+ *          description: Not authorized
+ *        500:
+ *          description: Server error
+ *    delete:
+ *      summary: Remove rental car provider from favorites
+ *      tags: [Auth]
+ *      security:
+ *        - bearerAuth: []
+ *      parameters:
+ *        - in: path
+ *          name: rentalCarProviderId
+ *          schema:
+ *            type: string
+ *          required: true
+ *          description: The rental car provider id to remove from favorites
+ *      responses:
+ *        200:
+ *          description: Rental car provider removed from favorites
+ *          content:
+ *            application/json:
+ *              schema:
+ *                type: object
+ *                properties:
+ *                  success:
+ *                    type: boolean
+ *                  data:
+ *                    type: array
+ *                    items:
+ *                      type: string
+ *                      description: Array of favorite rental car provider IDs
+ *        400:
+ *          description: Not in favorites or bad request
+ *        401:
+ *          description: Not authorized
+ *        500:
+ *          description: Server error
+ */
 
 const express = require('express');
-const {register, login, getMe, logout, forgotPassword, resetPassword} = require('../controllers/auth');
+const {register, login, getMe, logout, forgotPassword, resetPassword, addFavorite, removeFavorite, getFavorites} = require('../controllers/auth');
 
 const router = express.Router();
 const {protect} = require('../middleware/auth');
@@ -261,5 +362,8 @@ router.get('/me', protect, getMe);
 router.get('/logout',logout);
 router.post('/forgotpassword', forgotPassword);
 router.put('/resetpassword/:resettoken', resetPassword);
+router.get('/favorites', protect, getFavorites);
+router.post('/favorites/:rentalCarProviderId', protect, addFavorite);
+router.delete('/favorites/:rentalCarProviderId', protect, removeFavorite);
 
 module.exports = router;

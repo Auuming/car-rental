@@ -1,4 +1,5 @@
 const User = require("../models/User");
+const RentalCarProvider = require("../models/RentalCarProvider");
 const { Resend } = require("resend");
 const jwt = require("jsonwebtoken");
 
@@ -226,6 +227,101 @@ exports.resetPassword = async (req, res, next) => {
     await user.save();
 
     sendTokenResponse(user, 200, res);
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      msg: "Server error",
+    });
+  }
+};
+
+//@desc    Add rental car provider to favorites
+//@route   POST /api/v1/auth/favorites/:rentalCarProviderId
+//@access  Private
+exports.addFavorite = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.id);
+    const rentalCarProvider = await RentalCarProvider.findById(req.params.rentalCarProviderId);
+
+    if (!rentalCarProvider) {
+      return res.status(404).json({
+        success: false,
+        msg: "Rental car provider not found",
+      });
+    }
+
+    //Check if already in favorites
+    const favoriteIds = user.favorites.map(fav => fav.toString());
+    if (favoriteIds.includes(req.params.rentalCarProviderId)) {
+      return res.status(400).json({
+        success: false,
+        msg: "Rental car provider already in favorites",
+      });
+    }
+
+    user.favorites.push(req.params.rentalCarProviderId);
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      data: user.favorites,
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      msg: "Server error",
+    });
+  }
+};
+
+//@desc    Remove rental car provider from favorites
+//@route   DELETE /api/v1/auth/favorites/:rentalCarProviderId
+//@access  Private
+exports.removeFavorite = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.id);
+
+    //Check if in favorites
+    const favoriteIds = user.favorites.map(fav => fav.toString());
+    if (!favoriteIds.includes(req.params.rentalCarProviderId)) {
+      return res.status(400).json({
+        success: false,
+        msg: "Rental car provider not in favorites",
+      });
+    }
+
+    user.favorites = user.favorites.filter(
+      (fav) => fav.toString() !== req.params.rentalCarProviderId
+    );
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      data: user.favorites,
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      msg: "Server error",
+    });
+  }
+};
+
+//@desc    Get user's favorite rental car providers
+//@route   GET /api/v1/auth/favorites
+//@access  Private
+exports.getFavorites = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.id).populate({
+      path: 'favorites',
+      select: 'name address tel'
+    });
+
+    res.status(200).json({
+      success: true,
+      count: user.favorites.length,
+      data: user.favorites,
+    });
   } catch (err) {
     return res.status(500).json({
       success: false,

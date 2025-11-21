@@ -36,6 +36,10 @@ const UserSchema = new mongoose.Schema({
     },
     resetPasswordToken: String,
     resetPasswordExpire: Date,
+    favorites: [{
+        type: mongoose.Schema.ObjectId,
+        ref: 'RentalCarProvider'
+    }],
     createdAt:{
         type: Date,
         default:Date.now
