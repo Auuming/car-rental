@@ -15,6 +15,10 @@ const BookingSchema = new mongoose.Schema ({
         ref: 'RentalCarProvider',
         required:true
     },
+    reminderSent: {
+        type: Boolean,
+        default: false
+    },
     createdAt: {
         type: Date,
         default: Date.now

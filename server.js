@@ -10,6 +10,8 @@ const rateLimit = require("express-rate-limit");
 const hpp = require("hpp");
 const swaggerJsDoc = require("swagger-jsdoc");
 const swaggerUI = require("swagger-ui-express");
+const cron = require("node-cron");
+const { sendBookingReminders } = require("./controllers/notifications");
 
 //Load env vars
 dotenv.config({ path: "./config/config.env" });
@@ -83,6 +85,27 @@ const swaggerOptions = {
 };
 const swaggerDocs = swaggerJsDoc(swaggerOptions);
 app.use("/api-docs", swaggerUI.serve, swaggerUI.setup(swaggerDocs));
+
+// Cron job to send booking reminders
+cron.schedule("0 9 * * *", async () => {
+  console.log("Running daily booking reminder check...");
+  try {
+    const result = await sendBookingReminders();
+    console.log("Booking reminders sent:", result);
+  } catch (error) {
+    console.error("Error in booking reminder cron job:", error);
+  }
+});
+
+// Also run immediately on server start (for testing, can be removed in production)
+if (process.env.NODE_ENV === "development") {
+  console.log("Running initial booking reminder check (development mode)...");
+  sendBookingReminders().then(result => {
+    console.log("Initial booking reminders sent:", result);
+  }).catch(error => {
+    console.error("Error in initial booking reminder check:", error);
+  });
+}
 
 //Handle unhandled promise rejections
 process.on("unhandledRejection", (err, promise) => {

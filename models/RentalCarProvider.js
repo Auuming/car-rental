@@ -12,9 +12,12 @@ const RentalCarProviderSchema = new mongoose.Schema({
         type: String,
         required: [true, 'Please add an address']
     },
-    tel:{
-        type: String,
-        required: [true, 'Please add a telephone number']
+    telephone:{
+        type:String,
+        required:[true,'Please add a telephone number'],
+        minlength:[10,'Telephone number must be at least 10 digits'],
+        maxlength:[10,'Telephone number can not be more than 10 digits'],
+        match:[/^[0-9]{10}$/,'Please add a valid telephone number (10 digits only)']
     },
 }, {
     toJSON: {virtuals:true},
