@@ -158,13 +158,13 @@ const {
 } = require("../controllers/rentalCarProviders");
 
 //Include other resource routers
-const appointmentRouter = require("./appointments");
+const bookingRouter = require("./bookings");
 
 const router = express.Router();
 const { protect, authorize } = require("../middleware/auth");
 
 //Re-route into other resource routers
-router.use("/:rentalCarProviderId/appointments/", appointmentRouter);
+router.use("/:rentalCarProviderId/bookings/", bookingRouter);
 
 router
   .route("/")

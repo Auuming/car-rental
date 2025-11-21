@@ -1,5 +1,5 @@
 const RentalCarProvider = require('../models/RentalCarProvider');
-const Appointment = require('../models/Appointment');
+const Booking = require('../models/Booking');
 
 function transformQuery(input) {
   const output = {};
@@ -141,7 +141,7 @@ exports.deleteRentalCarProvider = async(req,res,next) => {
         if (!rentalCarProvider) {
             return res.status(400).json({success:false, message:`Rental car provider not found with id of ${req.params.id}`});
         }
-        await Appointment.deleteMany({ hospital: req.params.id });
+        await Booking.deleteMany({ rentalCarProvider: req.params.id });
         await RentalCarProvider.deleteOne({_id:req.params.id});
         res.status(200).json({success:true, data:{}});
     } catch(err) {
